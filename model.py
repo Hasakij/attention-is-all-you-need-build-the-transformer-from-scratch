@@ -234,8 +234,14 @@ def transpose_heads_before_sequence(split_tensor):
     # TODO: rearrange (B, L, num_heads, d_k) into (B, num_heads, L, d_k).
     return torch.transpose(split_tensor, 1, 2)
 
-# Step 25 - merge_heads_back_to_model_dim (not yet solved)
-# TODO: implement
+# Step 25 - merge_heads_back_to_model_dim
+import torch
+
+def merge_heads_back_to_model_dim(multi_head_tensor):
+    # TODO: merge the head axis back into the feature axis to reconstruct d_model
+    B, H, L, d_k = multi_head_tensor.shape
+    t = multi_head_tensor.transpose(1, 2)
+    return t.reshape(B, L, H * d_k).contiguous()
 
 # Step 26 - apply_linear_projection (not yet solved)
 # TODO: implement
