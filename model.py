@@ -348,8 +348,16 @@ def apply_dropout_with_keep_mask(x, keep_mask, keep_prob):
     output = x * keep_mask / keep_prob
     return output
 
-# Step 39 - encoder_layer_self_attention_sublayer (not yet solved)
-# TODO: implement
+# Step 39 - encoder_layer_self_attention_sublayer
+def encoder_layer_self_attention_sublayer(x, w_q, w_k, w_v, w_o, gamma, beta, num_heads, src_mask):
+    # TODO: run multi-head self-attention on x and wrap with residual add-and-norm.
+    attn_out = assemble_multi_head_attention_forward(
+        query=x, key=x, value=x,
+        w_q=w_q, w_k=w_k, w_v=w_v, w_o=w_o,
+        num_heads=num_heads, mask=src_mask
+    )
+
+    return apply_residual_add_and_norm(x, attn_out, gamma, beta)
 
 # Step 40 - encoder_layer_feed_forward_sublayer (not yet solved)
 # TODO: implement
