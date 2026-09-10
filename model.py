@@ -499,8 +499,49 @@ def apply_log_softmax_over_vocab(logits):
     # TODO: Convert decoder logits (B, T, V) into log probabilities over the vocabulary axis.
     return F.log_softmax(logits, dim=-1)
 
-# Step 51 - run_transformer_forward (not yet solved)
-# TODO: implement
+# Step 51 - run_transformer_forward
+def run_transformer_forward(src_ids, tgt_ids, model_params, num_heads, pad_id):
+    # TODO: embed src+tgt, add PE, build masks, run encoder/decoder, project to log probs.
+    
+    # shapes
+    B, S = src_ids.shape
+    _, T = tgt_ids.shape
+    vocab_size, D = model_params['token_embedding'].shape
+
+    # embedding
+    src_emb = model_params['token_embedding'][src_ids] # (B, S, D)
+    tgt_emb = model_params['token_embedding'][tgt_ids] # (B, T, D)
+    
+    # scale
+    src_emb = scale_embeddings_by_sqrt_d_model(src_emb, D)
+    tgt_emb = scale_embeddings_by_sqrt_d_model(tgt_emb, D)
+    
+    # pe 
+    max_len = max(S, T)
+    pe = build_sinusoidal_positional_encoding(max_len, D)
+
+    src_emb = add_positional_encoding_to_embeddings(src_emb, pe)
+    tgt_emb = add_positional_encoding_to_embeddings(tgt_emb, pe)
+
+    # masks
+    src_mask = build_padding_mask(src_ids, pad_id)                   # (B, 1, 1, S)
+    tgt_padding = build_padding_mask(tgt_ids, pad_id)                # (B, 1, 1, T)
+    causal = build_causal_mask(T)                                    # (1, 1, T, T)
+    tgt_mask = combine_padding_and_causal_masks(tgt_padding, causal) # (B, 1, T, T)
+
+    # encoder
+    enc_out = stack_encoder_layers(src_emb, model_params['encoder_layers'], num_heads, src_mask) # (B, S, D)
+    
+    # decoder
+    dec_out = stack_decoder_layers(tgt_emb, enc_out, model_params['decoder_layers'], num_heads, src_mask, tgt_mask) # (B, T, D)
+
+    # projection
+    logits = apply_final_output_projection(dec_out, model_params['output_projection'], None)
+    
+    # log-softmax
+    log_probs = apply_log_softmax_over_vocab(logits) # (B, T, V)
+    
+    return log_probs
 
 # Step 52 - init_encoder_layer_parameters (not yet solved)
 # TODO: implement
