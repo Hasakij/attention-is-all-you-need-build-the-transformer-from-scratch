@@ -543,8 +543,45 @@ def run_transformer_forward(src_ids, tgt_ids, model_params, num_heads, pad_id):
     
     return log_probs
 
-# Step 52 - init_encoder_layer_parameters (not yet solved)
-# TODO: implement
+# Step 52 - init_encoder_layer_parameters
+import torch
+import math
+
+def init_encoder_layer_parameters(d_model, num_heads, d_ff):
+    """Return a dict of leaf tensors with requires_grad=True for one encoder layer."""
+    # TODO: allocate w_q, w_k, w_v, w_o, w1, b1, w2, b2, attn_gamma, attn_beta, ffn_gamma, ffn_beta.
+   
+    # attn weights(D, D)
+    w_q = torch.randn(d_model, d_model) * 0.02
+    w_k = torch.randn(d_model, d_model) * 0.02
+    w_v = torch.randn(d_model, d_model) * 0.02
+    w_o = torch.randn(d_model, d_model) * 0.02
+
+    # FFN: (D, F), (F, D)
+    w1 = torch.randn(d_model, d_ff) * 0.02
+    w2 = torch.randn(d_ff, d_model) * 0.02
+
+    # FFN biases
+    b1 = torch.zeros(d_ff)
+    b2 = torch.zeros(d_model)
+
+    # Layernorm: gamma=1, beta=0
+    attn_gamma = torch.ones(d_model)
+    attn_beta = torch.zeros(d_model)
+    ffn_gamma = torch.ones(d_model)
+    ffn_beta = torch.zeros(d_model)
+
+    layer_params = {
+        'w_q': w_q, 'w_k': w_k, 'w_v': w_v, 'w_o': w_o,
+        'w1': w1, 'b1': b1, 'w2': w2, 'b2': b2,
+        'attn_gamma': attn_gamma, 'attn_beta': attn_beta,
+        'ffn_gamma': ffn_gamma, 'ffn_beta': ffn_beta
+    }
+
+    for key, tensor in layer_params.items():
+        layer_params[key] = tensor.to(torch.float32).requires_grad_(True)
+
+    return layer_params
 
 # Step 53 - init_decoder_layer_parameters (not yet solved)
 # TODO: implement
