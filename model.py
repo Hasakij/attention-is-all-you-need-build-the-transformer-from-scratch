@@ -792,8 +792,15 @@ def update_adam_first_moment(m_prev, grad, beta1):
         m_t = beta1 * m_prev + (1 - beta1) * grad
     return m_t
 
-# Step 66 - update_adam_second_moment (not yet solved)
-# TODO: implement
+# Step 66 - update_adam_second_moment
+import torch
+
+def update_adam_second_moment(v_prev, grad, beta2):
+    """Return v_t = beta2 * v_prev + (1 - beta2) * grad ** 2."""
+    # TODO: apply Adam's EMA update for the second moment of the gradient
+    with torch.no_grad():
+        v_t = beta2 * v_prev + (1 - beta2) * torch.square(grad)
+    return v_t
 
 # Step 67 - apply_adam_bias_correction (not yet solved)
 # TODO: implement
