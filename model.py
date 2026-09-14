@@ -506,11 +506,18 @@ def run_transformer_forward(src_ids, tgt_ids, model_params, num_heads, pad_id):
     # shapes
     B, S = src_ids.shape
     _, T = tgt_ids.shape
-    vocab_size, D = model_params['token_embedding'].shape
+    
+    if 'src_embedding' in model_params:
+        src_w = model_params['src_embedding'] # (V, D)
+        tgt_w = model_params['tgt_embedding'] # (V, D)
+    else:
+        src_w = model_params['token_embedding']
+        tgt_w = model_params['token_embedding']
 
+    D = src_w.shape[-1]
     # embedding
-    src_emb = model_params['token_embedding'][src_ids] # (B, S, D)
-    tgt_emb = model_params['token_embedding'][tgt_ids] # (B, T, D)
+    src_emb = src_w[src_ids]
+    tgt_emb = tgt_w[tgt_ids]
     
     # scale
     src_emb = scale_embeddings_by_sqrt_d_model(src_emb, D)
@@ -852,8 +859,34 @@ def zero_all_parameter_gradients(parameter_list):
     for param in parameter_list:
         param.grad = None
 
-# Step 71 - compute_batch_training_loss (not yet solved)
-# TODO: implement
+# Step 71 - compute_batch_training_loss
+def compute_batch_training_loss(src_batch, tgt_batch, model_params, config):
+    # TODO: shift targets right, run the forward pass, build smoothed targets, and average the KL loss over non-pad tokens.
+    
+    # target shift
+    decoder_input = shift_targets_right_with_start_token(tgt_batch, config['start_id'])
+    
+    # forward pass
+    log_probs = run_transformer_forward(src_batch, decoder_input, model_params, config['num_heads'], config['pad_id'])
+    
+    # uniform smoothing
+    B, T = tgt_batch.shape
+    V = config['vocab_size']
+    q = build_uniform_smoothing_distribution((B, T, V), V, config['smoothing'])
+
+    # gold confidence
+    q = set_confidence_on_gold_tokens(q, tgt_batch, 1.0 - config['smoothing'])
+
+    # zero pad
+    q = zero_pad_column_and_pad_token_rows(q, tgt_batch, config['pad_id'])
+    
+    # KL sum
+    total_loss = compute_label_smoothed_kl_loss(log_probs, q)
+
+    # avg loss
+    avg_loss = average_loss_over_non_pad_tokens(total_loss, tgt_batch, config['pad_id'])
+
+    return avg_loss
 
 # Step 72 - run_training_step_with_backprop (not yet solved)
 # TODO: implement
